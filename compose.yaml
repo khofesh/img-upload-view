@@ -1,2 +1,25 @@
 name: proj-img-upload-view
 
+services:
+  # PostgreSQL
+  postgres:
+    image: pgvector/pgvector:pg15
+    container_name: postgres_target
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=app_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./bullhorn/postgres-init:/docker-entrypoint-initdb.d
+    healthcheck:
+      test: pg_isready -U postgres -d app_db
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  mssql_data:
+  postgres_data:
