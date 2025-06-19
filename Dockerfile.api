@@ -1,0 +1,38 @@
+FROM golang:1.24-bookworm AS builder
+
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y git
+
+
+COPY go.* ./
+
+COPY . ./
+
+RUN go mod download
+
+
+RUN apt-get update
+
+RUN touch config.yaml
+RUN touch .envrc
+
+# Build the binary.
+RUN make build/apac-ai-api
+
+# Use the official Debian slim image for a lean production container.
+FROM debian:bookworm-slim
+RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
+    ca-certificates && \
+    rm -rf /var/lib/apt/lists/*
+
+# dependencies
+RUN apt-get update
+
+# Copy the binary to the production image from the builder stage.
+COPY --from=builder /app/bin/linux/api /api
+
+EXPOSE 8080
+
+# Run the web service on container startup.
+CMD ["./api"]

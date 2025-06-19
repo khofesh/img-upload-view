@@ -1,6 +1,54 @@
 name: proj-img-upload-view
 
 services:
+  # nginx as reverse proxy
+  reverse-proxy:
+    image: nginx:stable
+    container_name: reverse_proxy
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - uploaded_images:/usr/share/nginx/html/images:ro
+    networks:
+      - api-network
+    depends_on:
+      - api-service
+      - frontend
+    restart: unless-stopped
+
+  # frontend
+  frontend:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: frontend_app
+    environment:
+      - VITE_API_URL=http://localhost/api
+    networks:
+      - api-network
+    restart: unless-stopped
+
+  # API
+  api-service:
+    build:
+      context: .
+      dockerfile: Dockerfile.api
+    container_name: api_service
+    environment:
+      - PORT=8080
+      - DB_DSN=postgres://postgres:postgres@postgres:5432/app_db?sslmode=disable
+      - UPLOAD_DIR=/app/uploads
+    volumes:
+      - uploaded_images:/app/uploads
+    networks:
+      - api-network
+      - repository-network
+    depends_on:
+      postgres:
+        condition: service_healthy
+    restart: unless-stopped
+
   # PostgreSQL
   postgres:
     image: pgvector/pgvector:pg15
@@ -13,12 +61,21 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./bullhorn/postgres-init:/docker-entrypoint-initdb.d
+      - ./config/postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - repository-network
     healthcheck:
       test: pg_isready -U postgres -d app_db
       interval: 30s
       timeout: 10s
       retries: 5
+    restart: unless-stopped
+
+networks:
+  api-network:
+    driver: bridge
+  repository-network:
+    driver: bridge
 
 volumes:
   mssql_data:
