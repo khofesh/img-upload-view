@@ -18,3 +18,13 @@ func UploadImage(app *config.Application) http.HandlerFunc {
 		}
 	}
 }
+
+func GetImage(app *config.Application) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		err := reqres.WriteJSON(w, http.StatusOK, envelope{"message": "ok"}, nil)
+
+		if err != nil {
+			app.ErrorResponse.ServerErrorResponse(w, r, err)
+		}
+	}
+}

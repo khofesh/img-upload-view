@@ -18,7 +18,8 @@ func routes(app *config.Application) http.Handler {
 		middlewares.WithErrorResponse[data.Models](app.ErrorResponse),
 	)
 
-	router.HandlerFunc(http.MethodGet, "/v1/image/upload", handlers.UploadImage(app))
+	router.HandlerFunc(http.MethodPost, "/upload", handlers.UploadImage(app))
+	router.HandlerFunc(http.MethodGet, "/image", handlers.GetImage(app))
 
 	return mw.RecoverPanic(router)
 }
