@@ -19,7 +19,8 @@ func routes(app *config.Application) http.Handler {
 	)
 
 	router.HandlerFunc(http.MethodPost, "/upload", handlers.UploadImage(app))
-	router.HandlerFunc(http.MethodGet, "/image", handlers.GetImage(app))
+	router.HandlerFunc(http.MethodGet, "/image", handlers.GetImages(app))
+	router.HandlerFunc(http.MethodGet, "/image/:id", handlers.GetImageByID(app))
 
 	return mw.RecoverPanic(router)
 }
