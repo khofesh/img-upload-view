@@ -17,12 +17,12 @@ help:
 ## run: run API application
 .PHONY: run/api
 run/api:
-	go run ./cmd/api -config-path="./config.yaml"
+	go run ./cmd/api -config-path="./config.dev.yaml"
 
 ## run: run cli
 .PHONY: run/cli
 run/cli:
-	go run ./cmd/cli -config-path="./config.yaml"
+	go run ./cmd/cli
 
 
 # ==================================================================================== #

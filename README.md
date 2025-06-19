@@ -1,6 +1,6 @@
 # update load and view image services
 
-`compose-dev.yaml` is for dev
+`compose.dev.yaml` is for dev
 
 `compose.yaml` is for prod (let's say it's prod)
 
@@ -58,8 +58,8 @@ cd web
 npm run dev
 ```
 
-## environment
+## fake prod
 
 ```shell
-export UPLOAD_DIR="./upload/"
+docker compose -f compose.yaml up -d
 ```
