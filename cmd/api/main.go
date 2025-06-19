@@ -22,11 +22,10 @@ func main() {
 	flag.Parse()
 	err := readconfig.ReadConfigFromFile(cfgPath, &cfg)
 	if err != nil {
-		// Handle error reading config file
 		panic(err)
 	}
 
-	// Initialize zerolog
+	// zerolog
 	multiWriters := zerolog.MultiLevelWriter(os.Stdout)
 	log.Logger = zerolog.New(multiWriters).With().Timestamp().Logger()
 	zerolog.SetGlobalLevel(zerolog.DebugLevel)

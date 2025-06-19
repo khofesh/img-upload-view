@@ -61,5 +61,6 @@ npm run dev
 ## fake prod
 
 ```shell
+docker compose -f compose.yaml up --build
 docker compose -f compose.yaml up -d
 ```
