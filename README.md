@@ -61,6 +61,6 @@ npm run dev
 ## fake prod
 
 ```shell
-docker compose -f compose.yaml up --build
+docker compose -f compose.yaml up --build # if "localhost" cannot be accessed, wait a bit
 docker compose -f compose.yaml up -d
 ```

@@ -22,6 +22,7 @@ func routes(app *config.Application) http.Handler {
 	router.HandlerFunc(http.MethodPost, "/upload", handlers.UploadImage(app))
 	router.HandlerFunc(http.MethodGet, "/images", handlers.GetImages(app))
 	router.HandlerFunc(http.MethodGet, "/image/:id", handlers.GetImageByID(app))
+	router.HandlerFunc(http.MethodDelete, "/image/:id", handlers.DeleteImage(app))
 
 	// serving files for development
 	if app.Config.Env == "local" {
