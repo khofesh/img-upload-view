@@ -1,38 +1,46 @@
-FROM golang:1.24-bookworm AS builder
+FROM golang:bookworm AS builder
 
 WORKDIR /app
 
-RUN apt-get update && apt-get install -y git
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
 
-
-COPY go.* ./
-
-COPY . ./
-
+COPY go.mod go.sum ./
 RUN go mod download
 
+COPY . .
 
-RUN apt-get update
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
 
-RUN touch config.yaml
-RUN touch .envrc
-
-# Build the binary.
-RUN make build/apac-ai-api
-
-# Use the official Debian slim image for a lean production container.
+# Final stage
 FROM debian:bookworm-slim
-RUN set -x && apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y \
-    ca-certificates && \
+
+# Install ca-certificates for HTTPS requests and timezone data
+RUN apt-get update && \
+    apt-get install -y ca-certificates tzdata && \
     rm -rf /var/lib/apt/lists/*
 
-# dependencies
-RUN apt-get update
+WORKDIR /app
 
-# Copy the binary to the production image from the builder stage.
-COPY --from=builder /app/bin/linux/api /api
+# Create uploads directory
+RUN mkdir -p /app/uploads
 
+# Copy binary from builder stage
+COPY --from=builder /app/main .
+
+# Copy config file
+COPY config.yaml .
+
+# Expose port
 EXPOSE 8080
 
-# Run the web service on container startup.
-CMD ["./api"]
+# Create non-root user
+RUN groupadd -g 1001 appgroup && \
+    useradd -u 1001 -g appgroup -s /bin/bash -m appuser
+
+# Change ownership of uploads directory
+RUN chown -R appuser:appgroup /app/uploads
+
+USER appuser
+
+CMD ["./main"]

@@ -1,0 +1,7 @@
+port: 8080
+env: production
+db:
+  dsn: "postgres://postgres:postgres@postgres:5432/app_db?sslmode=disable"
+trustedOrigins:
+  - http://localhost:3000
+  - http://localhost

@@ -41,6 +41,7 @@ services:
       - UPLOAD_DIR=/app/uploads
     volumes:
       - uploaded_images:/app/uploads
+      - ./configs/config.yaml:/etc/secrets/config.yaml
     networks:
       - api-network
       - repository-network
