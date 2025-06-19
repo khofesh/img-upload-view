@@ -41,7 +41,7 @@ func main() {
 	app := &config.Application{
 		Logger:        &log.Logger,
 		Config:        &cfg,
-		Models:        data.NewModels(db),
+		Models:        data.NewModels(db, &log.Logger),
 		ErrorResponse: errors.NewErrorResponse(&log.Logger),
 	}
 
