@@ -13,6 +13,8 @@ sudo chcon -Rt svirt_sandbox_file_t configs/
 
 ## development
 
+docker
+
 ```shell
 # docker compose
 docker compose -f compose-dev.yaml up -d
@@ -46,6 +48,14 @@ psql
 
 ```shell
 psql "postgres://postgres:postgres@localhost:5432/app_db?sslmode=disable"
+```
+
+frontend
+
+```shell
+export VITE_API_URL=http://localhost:8080
+cd web
+npm run dev
 ```
 
 ## environment
