@@ -13,7 +13,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./bullhorn/postgres-init:/docker-entrypoint-initdb.d
+      - ./configs/postgres-init:/docker-entrypoint-initdb.d
     healthcheck:
       test: pg_isready -U postgres -d app_db
       interval: 30s

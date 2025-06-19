@@ -39,7 +39,7 @@ func UploadImage(app *config.Application) http.HandlerFunc {
 		defer file.Close()
 
 		// validate
-		err = validateImageFile(file, fileHeader.Size)
+		err = validateImageFile(file, fileHeader.Size, fileHeader.Header.Get("Content-Type"))
 		if err != nil {
 			app.ErrorResponse.BadRequestResponse(w, r, err)
 			return
@@ -220,9 +220,13 @@ func generateUniqueFilename(originalFilename string) string {
 	return fmt.Sprintf("%d_%s%s", timestamp, randomString, ext)
 }
 
-func validateImageFile(file io.Reader, size int64) error {
+func validateImageFile(file io.Reader, size int64, contentType string) error {
 	if size > MaxUploadSize {
 		return fmt.Errorf("file size exceeds 10MB limit")
+	}
+
+	if contentType != "image/jpeg" && contentType != "image/jpg" {
+		return fmt.Errorf("only JPEG images are allowed")
 	}
 
 	return nil
