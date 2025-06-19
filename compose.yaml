@@ -8,7 +8,7 @@ services:
     ports:
       - "80:80"
     volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
       - uploaded_images:/usr/share/nginx/html/images:ro
     networks:
       - api-network
@@ -79,5 +79,5 @@ networks:
     driver: bridge
 
 volumes:
-  mssql_data:
   postgres_data:
+  uploaded_images:
