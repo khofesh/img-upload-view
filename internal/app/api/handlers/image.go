@@ -131,6 +131,10 @@ func GetImages(app *config.Application) http.HandlerFunc {
 			return
 		}
 
+		if limit > 20 {
+			limit = 20
+		}
+
 		images, totalCount, err := app.Models.Image.GetAll(limit, offset)
 		if err != nil {
 			app.ErrorResponse.ServerErrorResponse(w, r, fmt.Errorf("unable to retrieve images: %v", err))
