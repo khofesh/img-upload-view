@@ -39,7 +39,7 @@ func UploadImage(app *config.Application) http.HandlerFunc {
 		defer file.Close()
 
 		// validate
-		err = validateImageFile(file, fileHeader.Size, fileHeader.Header.Get("Content-Type"))
+		err = validateImageFile(fileHeader.Size, fileHeader.Header.Get("Content-Type"))
 		if err != nil {
 			app.ErrorResponse.BadRequestResponse(w, r, err)
 			return
@@ -53,6 +53,8 @@ func UploadImage(app *config.Application) http.HandlerFunc {
 			uploadDir = UploadDir
 		}
 
+		// NOTE: we could instead send the image data to GCP cloud storage
+		// or AWS S3 bucket
 		err = os.MkdirAll(uploadDir, 0755)
 		if err != nil {
 			app.ErrorResponse.ServerErrorResponse(w, r, fmt.Errorf("unable to create upload directory: %v", err))
@@ -98,15 +100,7 @@ func UploadImage(app *config.Application) http.HandlerFunc {
 
 		response := envelope{
 			"message": "Image uploaded successfully",
-			"image": envelope{
-				"id":                imageData.ID,
-				"filename":          imageData.Filename,
-				"original_filename": imageData.OriginalFilename,
-				"url":               imageData.URL,
-				"file_size":         imageData.FileSize,
-				"content_type":      imageData.ContentType,
-				"upload_timestamp":  imageData.UploadTimestamp,
-			},
+			"image":   imageData,
 		}
 
 		err = reqres.WriteJSON(w, http.StatusCreated, response, nil)
@@ -141,21 +135,8 @@ func GetImages(app *config.Application) http.HandlerFunc {
 			return
 		}
 
-		imageList := make([]envelope, len(images))
-		for i, img := range images {
-			imageList[i] = envelope{
-				"id":                img.ID,
-				"filename":          img.Filename,
-				"original_filename": img.OriginalFilename,
-				"url":               img.URL,
-				"file_size":         img.FileSize,
-				"content_type":      img.ContentType,
-				"upload_timestamp":  img.UploadTimestamp,
-			}
-		}
-
 		response := envelope{
-			"images": imageList,
+			"images": images,
 			"metadata": envelope{
 				"total_count": totalCount,
 				"limit":       limit,
@@ -189,17 +170,8 @@ func GetImageByID(app *config.Application) http.HandlerFunc {
 			return
 		}
 
-		// TODO: use json.marshal
 		response := envelope{
-			"image": envelope{
-				"id":                image.ID,
-				"filename":          image.Filename,
-				"original_filename": image.OriginalFilename,
-				"url":               image.URL,
-				"file_size":         image.FileSize,
-				"content_type":      image.ContentType,
-				"upload_timestamp":  image.UploadTimestamp,
-			},
+			"image": image,
 		}
 
 		err = reqres.WriteJSON(w, http.StatusOK, response, nil)
@@ -279,7 +251,7 @@ func generateUniqueFilename(originalFilename string) string {
 	return fmt.Sprintf("%d_%s%s", timestamp, randomString, ext)
 }
 
-func validateImageFile(file io.Reader, size int64, contentType string) error {
+func validateImageFile(size int64, contentType string) error {
 	if size > MaxUploadSize {
 		return fmt.Errorf("file size exceeds 10MB limit")
 	}
