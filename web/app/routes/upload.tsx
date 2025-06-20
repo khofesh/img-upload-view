@@ -135,7 +135,7 @@ export default function Upload() {
                 />
                 <p className="text-sm text-gray-500 mt-2">
                   {selectedFile?.name} (
-                  {(selectedFile?.size || 0 / (1024 * 1024)).toFixed(2)} MB)
+                  {((selectedFile?.size || 0) / (1024 * 1024)).toFixed(2)} MB)
                 </p>
               </div>
             )}
