@@ -24,6 +24,14 @@ export UPLOAD_DIR="./upload/"
 make run/api
 ```
 
+frontend (terminal 2)
+
+```shell
+export VITE_API_URL=http://localhost:8080
+cd web
+npm run dev
+```
+
 requests
 
 ```shell
@@ -48,14 +56,6 @@ psql
 
 ```shell
 psql "postgres://postgres:postgres@localhost:5432/app_db?sslmode=disable"
-```
-
-frontend (terminal 2)
-
-```shell
-export VITE_API_URL=http://localhost:8080
-cd web
-npm run dev
 ```
 
 ## fake prod
