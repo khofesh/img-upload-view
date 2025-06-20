@@ -13,7 +13,7 @@ sudo chcon -Rt svirt_sandbox_file_t configs/
 
 ## development
 
-docker
+docker and API service (terminal 1)
 
 ```shell
 # docker compose
@@ -50,7 +50,7 @@ psql
 psql "postgres://postgres:postgres@localhost:5432/app_db?sslmode=disable"
 ```
 
-frontend
+frontend (terminal 2)
 
 ```shell
 export VITE_API_URL=http://localhost:8080
@@ -64,3 +64,14 @@ npm run dev
 docker compose -f compose.yaml up --build # if "localhost" cannot be accessed, wait a bit
 docker compose -f compose.yaml up -d
 ```
+
+## generate dummy JPEG
+
+```shell
+cd dummy-jpeg
+python3 gen-dummy-jpeg.py
+```
+
+test it on the webpage
+
+![error-more-than-10mb](./images/error-more-than-10mb.png)
