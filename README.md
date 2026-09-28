@@ -4,6 +4,9 @@
 
 `compose.yaml` is for prod (let's say it's prod)
 
+Images are stored in S3-compatible object storage (MinIO AIStor). The API only signs
+presigned URLs; image bytes go straight from the browser to storage.
+
 ## selinux
 
 ```shell
@@ -11,15 +14,22 @@ sudo chgrp -R nogroup configs
 sudo chcon -Rt svirt_sandbox_file_t configs/
 ```
 
+## MinIO license
+
+MinIO AIStor requires a license file. Put it in the repo root as `minio.license` (it is
+gitignored), or point `MINIO_LICENSE_PATH` at it:
+
+```shell
+export MINIO_LICENSE_PATH="$HOME/minio.license"
+```
+
 ## development
 
-docker and API service (terminal 1)
+docker (Postgres + MinIO) and API service (terminal 1)
 
 ```shell
 # docker compose
-docker compose -f compose-dev.yaml up -d
-
-export UPLOAD_DIR="./upload/"
+docker compose -f compose.dev.yaml up -d
 
 make run/api
 ```
@@ -32,12 +42,27 @@ cd web
 npm run dev
 ```
 
+MinIO console: <http://localhost:9001> (user/password `minioadmin` / `minioadmin`).
+
 requests
 
+The upload is a three-step flow: ask for a presigned URL, PUT the bytes to storage, then
+confirm the upload.
+
 ```shell
-curl -X POST http://localhost:8080/upload \
-  -F "image=@/path/to/your/image.jpg" \
-  -H "Content-Type: multipart/form-data"
+# 1. create the upload
+curl -X POST http://localhost:8080/uploads \
+  -H "Content-Type: application/json" \
+  -d '{"filename":"cat.jpg","content_type":"image/jpeg","size":482113}'
+# => {"id":42,"upload":{"url":"...","method":"PUT","headers":{...},"expires_at":"..."}}
+
+# 2. upload the bytes directly to storage
+curl -X PUT "<upload.url>" \
+  -H "Content-Type: image/jpeg" \
+  --data-binary @/path/to/your/image.jpg
+
+# 3. confirm the upload
+curl -X POST http://localhost:8080/uploads/42/complete
 
 # get all images
 curl -X GET http://localhost:8080/images
@@ -49,7 +74,16 @@ curl -X GET "http://localhost:8080/images?limit=5&offset=0"
 curl -X GET "http://localhost:8080/images?limit=5&offset=5"
 
 # get image by ID
-curl -X GET http://localhost:8080/images/1
+curl -X GET http://localhost:8080/image/1
+
+# delete image by ID
+curl -X DELETE http://localhost:8080/image/1
+```
+
+cleanup stale pending uploads (older than 1h by default)
+
+```shell
+make run/cli/cleanup
 ```
 
 psql

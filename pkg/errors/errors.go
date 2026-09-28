@@ -70,6 +70,10 @@ func (h *ErrorResponse) FailedValidationResponse(w http.ResponseWriter, r *http.
 	h.ErrorResponse(w, r, http.StatusUnprocessableEntity, errors)
 }
 
+func (h *ErrorResponse) UnprocessableEntityResponse(w http.ResponseWriter, r *http.Request, err error) {
+	h.ErrorResponse(w, r, http.StatusUnprocessableEntity, err.Error())
+}
+
 func (h *ErrorResponse) InvalidAuthenticationTokenResponse(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("WWW-Authenticate", "Bearer")
 

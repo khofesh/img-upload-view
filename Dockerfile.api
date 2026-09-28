@@ -22,9 +22,6 @@ RUN apt-get update && \
 
 WORKDIR /app
 
-# Create uploads directory
-RUN mkdir -p /app/uploads
-
 # Copy binary from builder stage
 COPY --from=builder /app/main .
 
@@ -37,9 +34,6 @@ EXPOSE 8080
 # Create non-root user
 RUN groupadd -g 1001 appgroup && \
     useradd -u 1001 -g appgroup -s /bin/bash -m appuser
-
-# Change ownership of uploads directory
-RUN chown -R appuser:appgroup /app/uploads
 
 USER appuser
 

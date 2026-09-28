@@ -55,23 +55,48 @@ export default function Upload() {
     setUploading(true);
     setUploadError(null);
 
-    const formData = new FormData();
-    formData.append("image", selectedFile);
+    const apiUrl = import.meta.env.VITE_API_URL || "/api";
 
     try {
-      const apiUrl = import.meta.env.VITE_API_URL || "/api";
-      const response = await fetch(`${apiUrl}/upload`, {
+      // step 1: ask the API for a presigned upload URL
+      const presignResponse = await fetch(`${apiUrl}/uploads`, {
         method: "POST",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          filename: selectedFile.name,
+          content_type: selectedFile.type,
+          size: selectedFile.size,
+        }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || "Upload failed");
+      if (!presignResponse.ok) {
+        const errorData = await presignResponse.json().catch(() => null);
+        throw new Error(errorData?.error || "Unable to start upload");
       }
 
-      const result = await response.json();
-      console.log("Upload successful:", result);
+      const { id, upload } = await presignResponse.json();
+
+      // step 2: upload the bytes straight to object storage
+      const putResponse = await fetch(upload.url, {
+        method: upload.method || "PUT",
+        headers: upload.headers,
+        body: selectedFile,
+      });
+
+      if (!putResponse.ok) {
+        // storage errors are XML, so keep the message generic
+        throw new Error("Failed to upload image to storage");
+      }
+
+      // step 3: verify the object and mark the upload complete
+      const completeResponse = await fetch(`${apiUrl}/uploads/${id}/complete`, {
+        method: "POST",
+      });
+
+      if (!completeResponse.ok) {
+        const errorData = await completeResponse.json().catch(() => null);
+        throw new Error(errorData?.error || "Unable to complete upload");
+      }
 
       setUploadSuccess(true);
       setSelectedFile(null);

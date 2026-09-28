@@ -9,7 +9,6 @@ services:
       - "80:80"
     volumes:
       - ./configs/nginx.conf:/etc/nginx/nginx.conf:ro
-      - uploaded_images:/usr/share/nginx/html/images:ro
     networks:
       - api-network
     depends_on:
@@ -38,9 +37,7 @@ services:
     environment:
       - PORT=8080
       - DB_DSN=postgres://postgres:postgres@postgres:5432/app_db?sslmode=disable
-      - UPLOAD_DIR=/app/uploads
     volumes:
-      - uploaded_images:/app/uploads
       - ./configs/config.yaml:/etc/secrets/config.yaml
     networks:
       - api-network
@@ -48,6 +45,32 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      minio:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # MinIO AIStor (S3-compatible object storage)
+  minio:
+    image: quay.io/minio/aistor/minio:latest
+    container_name: minio_server
+    command: server /mnt/data --console-address ":9001" --license /minio.license
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_API_CORS_ALLOW_ORIGIN=http://localhost
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/mnt/data
+      - ${MINIO_LICENSE_PATH:-./minio.license}:/minio.license:ro
+    networks:
+      - api-network
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
     restart: unless-stopped
 
   # PostgreSQL
@@ -80,4 +103,4 @@ networks:
 
 volumes:
   postgres_data:
-  uploaded_images:
+  minio_data:

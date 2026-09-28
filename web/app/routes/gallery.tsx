@@ -39,15 +39,19 @@ export default function Gallery() {
 
   useEffect(() => {
     fetchImages();
+
+    // presigned GET URLs expire, so refresh them when the tab regains focus
+    const onFocus = () => fetchImages(true);
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
   }, []);
 
-  const fetchImages = async () => {
+  const fetchImages = async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
 
       const apiUrl = import.meta.env.VITE_API_URL || "/api";
-      console.log(apiUrl);
       const response = await fetch(`${apiUrl}/images?limit=20&offset=0`);
 
       if (!response.ok) {

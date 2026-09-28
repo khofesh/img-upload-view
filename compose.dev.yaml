@@ -20,5 +20,27 @@ services:
       timeout: 10s
       retries: 5
 
+  # MinIO AIStor (S3-compatible object storage)
+  minio:
+    image: quay.io/minio/aistor/minio:latest
+    container_name: minio_server
+    command: server /mnt/data --console-address ":9001" --license /minio.license
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+      - MINIO_API_CORS_ALLOW_ORIGIN=http://localhost:5173,http://localhost:3000
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - minio_data:/mnt/data
+      - ${MINIO_LICENSE_PATH:-./minio.license}:/minio.license:ro
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
 volumes:
   postgres_data:
+  minio_data:

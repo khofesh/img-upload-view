@@ -1,121 +1,135 @@
 # Graph Report - img-upload-view  (2026-09-28)
 
 ## Corpus Check
-- Corpus is ~5,721 words - fits in a single context window. You may not need a graph.
+- 24 files · ~9,187 words
+- Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 196 nodes · 266 edges · 23 communities (10 shown, 4 thin omitted)
-- Extraction: 97% EXTRACTED · 3% INFERRED · 0% AMBIGUOUS · INFERRED: 7 edges (avg confidence: 0.89)
-- Token cost: 41,876 input · 0 output
+- 267 nodes · 424 edges · 25 communities (12 shown, 4 thin omitted)
+- Extraction: 92% EXTRACTED · 8% INFERRED · 0% AMBIGUOUS · INFERRED: 34 edges (avg confidence: 0.87)
+- Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
-- Web TS Config
-- Image HTTP Handlers
-- Web Runtime Deps
-- Web Dev Deps
-- Error Response Helpers
-- API Bootstrap & Config
-- Docker Compose Stack
-- Server & Middleware Setup
-- Image Data Model
-- CORS & Recover Middleware
-- Gallery Page
-- CLI Stub
-- Welcome Component
-- Go Module
+- API Bootstrap & S3 Clients
+- Data Models & Config Defaults
+- Error Responses
+- TypeScript Compiler Config
+- Image API Handlers
+- Frontend Runtime Deps
+- Handler Test Fakes
+- Frontend Dev Deps
+- Compose Services
+- Middleware & Logging
+- Cleanup CLI
+- HTTP Middleware Stack
+- Gallery Route
+- Config Loader
+- Welcome Route
+- Go Module Root
 
 ## God Nodes (most connected - your core abstractions)
-1. `compilerOptions` - 16 edges
-2. `ErrorResponse` - 15 edges
-3. `Application` - 11 edges
-4. `routes()` - 9 edges
-5. `ImageModel` - 8 edges
-6. `UploadImage()` - 7 edges
-7. `GetImages()` - 7 edges
-8. `WriteJSON()` - 7 edges
-9. `main()` - 6 edges
-10. `GetImageByID()` - 6 edges
+1. `Application` - 17 edges
+2. `compilerOptions` - 16 edges
+3. `ErrorResponse` - 16 edges
+4. `Image` - 13 edges
+5. `S3Store` - 13 edges
+6. `fakeImageModel` - 10 edges
+7. `fakeObjectStore` - 9 edges
+8. `CompleteUpload()` - 9 edges
+9. `newTestApp()` - 9 edges
+10. `routes()` - 9 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `postgres (dev compose service)` --semantically_similar_to--> `postgres (pgvector pg15 service)`  [INFERRED] [semantically similar]
+- `Postgres service (dev)` --semantically_similar_to--> `Postgres service (prod)`  [INFERRED] [semantically similar]
   compose.dev.yaml → compose.yaml
 - `Local dev app config (config.dev.yaml)` --semantically_similar_to--> `Production app config (configs/config.yaml)`  [INFERRED] [semantically similar]
   config.dev.yaml → configs/config.yaml
-- `main()` --calls--> `Serve()`  [EXTRACTED]
-  cmd/api/main.go → internal/app/api/server.go
-- `main()` --calls--> `NewErrorResponse()`  [EXTRACTED]
-  cmd/api/main.go → pkg/errors/errors.go
-- `Application` --references--> `ErrorResponse`  [EXTRACTED]
-  internal/config/application.go → pkg/errors/errors.go
+- `MinIO AIStor service (dev)` --semantically_similar_to--> `MinIO AIStor service (prod)`  [INFERRED] [semantically similar]
+  compose.dev.yaml → compose.yaml
+- `api-service Go JSON API` --conceptually_related_to--> `Local dev app config (config.dev.yaml)`  [AMBIGUOUS]
+  compose.yaml → config.dev.yaml
+- `WithErrorResponse()` --references--> `ErrorResponse`  [EXTRACTED]
+  internal/middleware/middlewares.go → pkg/errors/errors.go
 
 ## Import Cycles
 - None detected.
 
 ## Hyperedges (group relationships)
-- **Production docker compose stack (nginx -> frontend/API -> Postgres)** — compose_reverse_proxy, compose_frontend, compose_api_service, compose_postgres [EXTRACTED 1.00]
-- **Image upload storage and static serving via shared volume** — compose_api_service, compose_uploaded_images, compose_reverse_proxy [INFERRED 0.85]
+- **Production service topology behind nginx** — compose_reverse_proxy, compose_frontend, compose_api_service, compose_postgres, compose_minio [EXTRACTED 1.00]
 
-## Communities (23 total, 4 thin omitted)
+## Communities (25 total, 4 thin omitted)
 
-### Community 0 - "Web TS Config"
+### Community 0 - "API Bootstrap & S3 Clients"
+Cohesion: 0.12
+Nodes (14): main(), context.Context, github.com/aws/aws-sdk-go-v2/service/s3.Client, github.com/aws/aws-sdk-go-v2/service/s3.PresignClient, time.Time, fakeObjectStore, NewStorage(), isNotFound() (+6 more)
+
+### Community 1 - "Data Models & Config Defaults"
+Cohesion: 0.11
+Nodes (12): Storage, IImageModel, ImageModel, DBConfig, database/sql.DB, time.Duration, fakeImageModel, Config (+4 more)
+
+### Community 2 - "Error Responses"
+Cohesion: 0.15
+Nodes (15): envelope, ErrorResponse, net/http.Header, net/http.Request, net/http.ResponseWriter, net/url.Values, ReadIDParam(), ReadInt() (+7 more)
+
+### Community 3 - "TypeScript Compiler Config"
 Cohesion: 0.08
 Nodes (26): **/*, **/.client/**/*, DOM, DOM.Iterable, ES2022, node, .react-router/types/**/*, **/.server/**/* (+18 more)
 
-### Community 1 - "Image HTTP Handlers"
-Cohesion: 0.16
-Nodes (18): net/http.HandlerFunc, net/http.Header, net/url.Values, envelope, DeleteImage(), generateUniqueFilename(), GetImageByID(), GetImages() (+10 more)
+### Community 4 - "Image API Handlers"
+Cohesion: 0.20
+Nodes (18): github.com/khofesh/img-upload-view/internal/data.Models, net/http.HandlerFunc, createUploadRequest, envelope, DeleteImage(), generateUniqueFilename(), GetImageByID(), GetImages() (+10 more)
 
-### Community 2 - "Web Runtime Deps"
+### Community 5 - "Frontend Runtime Deps"
 Cohesion: 0.09
 Nodes (21): isbot, react, react-dom, react-router, @react-router/node, @react-router/serve, dependencies, isbot (+13 more)
 
-### Community 3 - "Web Dev Deps"
+### Community 6 - "Handler Test Fakes"
+Cohesion: 0.23
+Nodes (16): bytes.Reader, github.com/julienschmidt/httprouter.Params, testing.T, newFakeImageModel(), newFakeObjectStore(), TestDeleteImage(), TestGetImageByIDHidesPending(), TestValidateImageFile() (+8 more)
+
+### Community 7 - "Frontend Dev Deps"
 Cohesion: 0.11
 Nodes (19): @react-router/dev, tailwindcss, @tailwindcss/vite, @types/node, @types/react, @types/react-dom, typescript, vite (+11 more)
 
-### Community 4 - "Error Response Helpers"
+### Community 8 - "Compose Services"
+Cohesion: 0.16
+Nodes (18): api-network, api-service Go JSON API, MinIO AIStor service (dev), Postgres service (dev), postgres_data volume (dev), frontend (Vite web service), MinIO AIStor service (prod), Postgres service (prod) (+10 more)
+
+### Community 9 - "Middleware & Logging"
 Cohesion: 0.29
-Nodes (7): envelope, ErrorResponse, net/http.Request, net/http.ResponseWriter, WriteFile(), NewErrorResponse(), writeJSON()
+Nodes (9): zerologWriter, github.com/rs/zerolog.Logger, T, New(), WithErrorResponse(), WithTrustedOrigins(), WithZerolog(), Middlewares (+1 more)
 
-### Community 5 - "API Bootstrap & Config"
-Cohesion: 0.15
-Nodes (11): main(), Config, IImageModel, DBConfig, database/sql.DB, time.Duration, Models, NewModels() (+3 more)
+### Community 10 - "Cleanup CLI"
+Cohesion: 0.47
+Nodes (4): main(), Cli(), runCleanup(), usage()
 
-### Community 6 - "Docker Compose Stack"
-Cohesion: 0.21
-Nodes (14): api-network, api-service (Go API service), postgres (dev compose service), postgres_data volume (dev), frontend (Vite web service), postgres (pgvector pg15 service), postgres_data volume, repository-network (+6 more)
-
-### Community 7 - "Server & Middleware Setup"
-Cohesion: 0.26
-Nodes (10): zerologWriter, github.com/rs/zerolog.Logger, Serve(), T, New(), WithErrorResponse(), WithTrustedOrigins(), WithZerolog() (+2 more)
-
-### Community 8 - "Image Data Model"
-Cohesion: 0.33
-Nodes (3): Image, ImageModel, time.Time
-
-### Community 9 - "CORS & Recover Middleware"
+### Community 11 - "HTTP Middleware Stack"
 Cohesion: 0.40
 Nodes (3): net/http.Handler, Middlewares[T], Middlewares[T]
 
+## Ambiguous Edges - Review These
+- `api-service Go JSON API` → `Local dev app config (config.dev.yaml)`  [AMBIGUOUS]
+  compose.yaml · relation: conceptually_related_to
+
 ## Knowledge Gaps
-- **53 isolated node(s):** `github.com/khofesh/img-upload-view`, `envelope`, `Middlewares[T]`, `Middlewares[T]`, `envelope` (+48 more)
-  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 83 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
+- **56 isolated node(s):** `baseUrl`, `esModuleInterop`, `jsx`, `module`, `moduleResolution` (+51 more)
+  These have ≤1 connection - possible missing edges or undocumented components. (Counts symbols only; 94 node(s) total have ≤1 connection when file, concept and rationale nodes are included.)
 - **4 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Application` connect `Image HTTP Handlers` to `Error Response Helpers`, `API Bootstrap & Config`, `Server & Middleware Setup`?**
-  _High betweenness centrality (0.061) - this node is a cross-community bridge._
-- **Why does `ErrorResponse` connect `Error Response Helpers` to `Image HTTP Handlers`, `Server & Middleware Setup`?**
-  _High betweenness centrality (0.047) - this node is a cross-community bridge._
-- **Why does `routes()` connect `Image HTTP Handlers` to `CORS & Recover Middleware`, `Server & Middleware Setup`?**
-  _High betweenness centrality (0.035) - this node is a cross-community bridge._
-- **What connects `github.com/khofesh/img-upload-view`, `envelope`, `Middlewares[T]` to the rest of the system?**
-  _53 weakly-connected nodes found - possible documentation gaps or missing edges._
-- **Should `Web TS Config` be split into smaller, more focused modules?**
-  _Cohesion score 0.07977207977207977 - nodes in this community are weakly interconnected._
-- **Should `Web Runtime Deps` be split into smaller, more focused modules?**
-  _Cohesion score 0.09090909090909091 - nodes in this community are weakly interconnected._
-- **Should `Web Dev Deps` be split into smaller, more focused modules?**
-  _Cohesion score 0.10526315789473684 - nodes in this community are weakly interconnected._
+- **What is the exact relationship between `api-service Go JSON API` and `Local dev app config (config.dev.yaml)`?**
+  _Edge tagged AMBIGUOUS (relation: conceptually_related_to) - confidence is low._
+- **Why does `Application` connect `Image API Handlers` to `API Bootstrap & S3 Clients`, `Data Models & Config Defaults`, `Error Responses`, `Handler Test Fakes`, `Middleware & Logging`?**
+  _High betweenness centrality (0.091) - this node is a cross-community bridge._
+- **Why does `ErrorResponse` connect `Error Responses` to `Middleware & Logging`, `Image API Handlers`?**
+  _High betweenness centrality (0.054) - this node is a cross-community bridge._
+- **Why does `S3Store` connect `API Bootstrap & S3 Clients` to `Middleware & Logging`, `Handler Test Fakes`, `Data Models & Config Defaults`?**
+  _High betweenness centrality (0.049) - this node is a cross-community bridge._
+- **What connects `baseUrl`, `esModuleInterop`, `jsx` to the rest of the system?**
+  _56 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **Should `API Bootstrap & S3 Clients` be split into smaller, more focused modules?**
+  _Cohesion score 0.11822660098522167 - nodes in this community are weakly interconnected._
+- **Should `Data Models & Config Defaults` be split into smaller, more focused modules?**
+  _Cohesion score 0.10591133004926108 - nodes in this community are weakly interconnected._

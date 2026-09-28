@@ -9,21 +9,29 @@ import (
 	"github.com/rs/zerolog"
 )
 
+const (
+	StatusPending = "pending"
+	StatusReady   = "ready"
+)
+
 type IImageModel interface {
-	Insert(image *Image) error
+	InsertPending(image *Image) error
+	MarkReady(id, size int64, contentType string) error
 	GetAll(limit, offset int64) ([]*Image, int64, error)
 	GetByID(id int64) (*Image, error)
 	Delete(id int64) error
-	GetByFilename(filename string) (*Image, error)
+	DeleteStalePending(olderThan time.Duration) ([]*Image, error)
 }
 
 type Image struct {
 	ID               int64     `json:"id"`
 	Filename         string    `json:"filename"`
 	OriginalFilename string    `json:"original_filename"`
+	ObjectKey        string    `json:"-"`
 	URL              string    `json:"url"`
 	FileSize         int64     `json:"file_size"`
 	ContentType      string    `json:"content_type"`
+	Status           string    `json:"status"`
 	UploadTimestamp  time.Time `json:"upload_timestamp"`
 }
 
@@ -32,18 +40,19 @@ type ImageModel struct {
 	logger     *zerolog.Logger
 }
 
-func (m ImageModel) Insert(image *Image) error {
+func (m ImageModel) InsertPending(image *Image) error {
 	query := `
-		INSERT INTO images (filename, original_filename, url, file_size, content_type, upload_timestamp)
-		VALUES ($1, $2, $3, $4, $5, $6)
+		INSERT INTO images (filename, original_filename, object_key, file_size, content_type, status, upload_timestamp)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 		RETURNING id, created_at, updated_at`
 
 	args := []any{
 		image.Filename,
 		image.OriginalFilename,
-		image.URL,
+		image.ObjectKey,
 		image.FileSize,
 		image.ContentType,
+		StatusPending,
 		image.UploadTimestamp,
 	}
 
@@ -53,36 +62,64 @@ func (m ImageModel) Insert(image *Image) error {
 	var createdAt, updatedAt time.Time
 	err := row.Scan(&image.ID, &createdAt, &updatedAt)
 	if err != nil {
-		m.logger.Error().Err(err).Msg("Failed to insert image")
+		m.logger.Error().Err(err).Msg("Failed to insert pending image")
 		return err
 	}
+
+	image.Status = StatusPending
 
 	m.logger.Info().
 		Int64("image_id", image.ID).
 		Str("filename", image.Filename).
-		Msg("Image inserted successfully")
+		Msg("Pending image inserted successfully")
 
+	return nil
+}
+
+func (m ImageModel) MarkReady(id, size int64, contentType string) error {
+	query := `
+		UPDATE images
+		SET status = $2, file_size = $3, content_type = $4, updated_at = CURRENT_TIMESTAMP
+		WHERE id = $1`
+
+	ctx := context.Background()
+	result, err := m.postgresDB.ExecContext(ctx, query, id, StatusReady, size, contentType)
+	if err != nil {
+		m.logger.Error().Err(err).Int64("image_id", id).Msg("Failed to mark image ready")
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+	if rowsAffected == 0 {
+		return errors.New("record not found")
+	}
+
+	m.logger.Info().Int64("image_id", id).Msg("Image marked ready successfully")
 	return nil
 }
 
 func (m ImageModel) GetAll(limit, offset int64) ([]*Image, int64, error) {
 	var totalCount int64
-	countQuery := `SELECT COUNT(*) FROM images`
+	countQuery := `SELECT COUNT(*) FROM images WHERE status = $1`
 
 	ctx := context.Background()
-	err := m.postgresDB.QueryRowContext(ctx, countQuery).Scan(&totalCount)
+	err := m.postgresDB.QueryRowContext(ctx, countQuery, StatusReady).Scan(&totalCount)
 	if err != nil {
 		m.logger.Error().Err(err).Msg("Failed to get total image count")
 		return nil, 0, err
 	}
 
 	query := `
-		SELECT id, filename, original_filename, url, file_size, content_type, upload_timestamp
+		SELECT id, filename, original_filename, object_key, file_size, content_type, status, upload_timestamp
 		FROM images 
+		WHERE status = $1
 		ORDER BY upload_timestamp DESC 
-		LIMIT $1 OFFSET $2`
+		LIMIT $2 OFFSET $3`
 
-	args := []any{limit, offset}
+	args := []any{StatusReady, limit, offset}
 
 	rows, err := m.postgresDB.QueryContext(ctx, query, args...)
 	if err != nil {
@@ -99,9 +136,10 @@ func (m ImageModel) GetAll(limit, offset int64) ([]*Image, int64, error) {
 			&image.ID,
 			&image.Filename,
 			&image.OriginalFilename,
-			&image.URL,
+			&image.ObjectKey,
 			&image.FileSize,
 			&image.ContentType,
+			&image.Status,
 			&image.UploadTimestamp,
 		)
 		if err != nil {
@@ -132,7 +170,7 @@ func (m ImageModel) GetByID(id int64) (*Image, error) {
 	}
 
 	query := `
-		SELECT id, filename, original_filename, url, file_size, content_type, upload_timestamp
+		SELECT id, filename, original_filename, object_key, file_size, content_type, status, upload_timestamp
 		FROM images 
 		WHERE id = $1`
 
@@ -143,9 +181,10 @@ func (m ImageModel) GetByID(id int64) (*Image, error) {
 		&image.ID,
 		&image.Filename,
 		&image.OriginalFilename,
-		&image.URL,
+		&image.ObjectKey,
 		&image.FileSize,
 		&image.ContentType,
+		&image.Status,
 		&image.UploadTimestamp,
 	)
 
@@ -189,36 +228,45 @@ func (m ImageModel) Delete(id int64) error {
 	return nil
 }
 
-func (m ImageModel) GetByFilename(filename string) (*Image, error) {
-	if filename == "" {
-		return nil, errors.New("filename cannot be empty")
+func (m ImageModel) DeleteStalePending(olderThan time.Duration) ([]*Image, error) {
+	query := `
+		DELETE FROM images
+		WHERE status = $1 AND upload_timestamp < $2
+		RETURNING id, filename, original_filename, object_key, file_size, content_type, status, upload_timestamp`
+
+	ctx := context.Background()
+	rows, err := m.postgresDB.QueryContext(ctx, query, StatusPending, time.Now().Add(-olderThan))
+	if err != nil {
+		m.logger.Error().Err(err).Msg("Failed to delete stale pending images")
+		return nil, err
+	}
+	defer rows.Close()
+
+	images := []*Image{}
+	for rows.Next() {
+		var image Image
+		err := rows.Scan(
+			&image.ID,
+			&image.Filename,
+			&image.OriginalFilename,
+			&image.ObjectKey,
+			&image.FileSize,
+			&image.ContentType,
+			&image.Status,
+			&image.UploadTimestamp,
+		)
+		if err != nil {
+			m.logger.Error().Err(err).Msg("Failed to scan stale pending image row")
+			return nil, err
+		}
+		images = append(images, &image)
 	}
 
-	query := `
-		SELECT id, filename, original_filename, url, file_size, content_type, upload_timestamp
-		FROM images 
-		WHERE filename = $1`
-
-	var image Image
-	ctx := context.Background()
-
-	err := m.postgresDB.QueryRowContext(ctx, query, filename).Scan(
-		&image.ID,
-		&image.Filename,
-		&image.OriginalFilename,
-		&image.URL,
-		&image.FileSize,
-		&image.ContentType,
-		&image.UploadTimestamp,
-	)
-
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, errors.New("record not found")
-		}
-		m.logger.Error().Err(err).Str("filename", filename).Msg("Failed to get image by filename")
+	if err = rows.Err(); err != nil {
+		m.logger.Error().Err(err).Msg("Error occurred during stale pending row iteration")
 		return nil, err
 	}
 
-	return &image, nil
+	m.logger.Info().Int("count", len(images)).Msg("Stale pending images deleted successfully")
+	return images, nil
 }

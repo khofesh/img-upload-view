@@ -27,6 +27,9 @@ go.work.sum
 # env file
 .env
 
+# MinIO AIStor license (mounted by compose)
+minio.license
+
 # Editor/IDE
 # .idea/
 # .vscode/

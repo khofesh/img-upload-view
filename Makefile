@@ -24,6 +24,11 @@ run/api:
 run/cli:
 	go run ./cmd/cli
 
+## run/cli/cleanup: remove stale pending uploads and their objects
+.PHONY: run/cli/cleanup
+run/cli/cleanup:
+	go run ./cmd/cli cleanup -config-path="./config.dev.yaml"
+
 
 # ==================================================================================== #
 # QUALITY CONTROL
