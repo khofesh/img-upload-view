@@ -66,19 +66,19 @@ Because the code only uses the S3 API through configurable endpoints, the choice
 
 ```
 Browser                         API                          Object storage        Postgres
-  │ POST /uploads                │                                 │                   │
-  │ {filename,content_type,size} │                                 │                   │
-  │─────────────────────────────▶│ validate (jpeg, ≤10MB)          │                   │
-  │                              │ key = images/<unix>_<hex>.jpg   │                   │
-  │                              │ INSERT status='pending' ───────────────────────────▶│
-  │                              │ presign PUT (TTL 5m)            │                   │
-  │◀─────────────────────────────│ {id, upload:{url,method,headers,expires_at}}        │
-  │ PUT <presigned url> (bytes) ──────────────────────────────────▶│                   │
-  │◀─────────────────────────────────────────────────────── 200 ───│                   │
+  │ POST /uploads                 │                                  │                   │
+  │ {filename,content_type,size}  │                                  │                   │
+  │─────────────────────────────▶│ validate (jpeg, ≤10MB)           │                   │
+  │                               │ key = images/<unix>_<hex>.jpg    │                   │
+  │                               │ INSERT status='pending' ───────────────────────────▶│
+  │                               │ presign PUT (TTL 5m)             │                   │
+  │◀─────────────────────────────│ {id, upload:{url,method,headers,expires_at}}         │
+  │ PUT <presigned url> (bytes) ───────────────────────────────────▶│                   │
+  │◀─────────────────────────────────────────────────────── 200 ─── │                   │
   │ POST /uploads/:id/complete ─▶│ HeadObject(key) ───────────────▶│                   │
-  │                              │ verify exists, size, type       │                   │
-  │                              │ UPDATE status='ready' ─────────────────────────────▶│
-  │◀─────────────────────────────│ 200 {image}                     │                   │
+  │                               │ verify exists, size, type        │                   │
+  │                               │ UPDATE status='ready' ─────────────────────────────▶│
+  │◀─────────────────────────────│ 200 {image}                      │                   │
 ```
 
 - **FR1** `POST /uploads` takes JSON `{filename, content_type, size}`. It rejects anything other
