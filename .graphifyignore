@@ -1,0 +1,53 @@
+# .graphifyignore — gitignore syntax.
+# Merged on top of .gitignore (read last), so it can only exclude MORE,
+# never re-include something .gitignore already dropped.
+
+# -- Go build output & local runtime data --------------------------------
+# Mostly covered by .gitignore, repeated so a dirty working tree is safe.
+bin/
+temp/
+upload/
+vendor/
+*.test
+*.out
+coverage.*
+
+# -- Frontend build output & dependencies --------------------------------
+web/node_modules/
+web/build/
+web/.react-router/
+web/package-lock.json
+
+# -- Lockfiles / checksums ------------------------------------------------
+go.sum
+
+# -- Binary / design assets -----------------------------------------------
+# Images are routed to semantic (LLM) extraction; logos, favicons and the
+# README screenshot carry no architectural information.
+*.png
+*.ico
+*.jpg
+*.jpeg
+*.gif
+*.svg
+
+# -- Editor / tooling config ----------------------------------------------
+.vscode/
+.idea/
+.claude/
+.codex/
+
+# -- Local data & logs ----------------------------------------------------
+*.log
+.env
+
+# -- graphify's own output ------------------------------------------------
+graphify-out/
+.graphify/
+
+# -- Prose (not code) -----------------------------------------------------
+docs/
+AGENTS.md
+CLAUDE.md
+README.md
+web/README.md
