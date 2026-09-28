@@ -92,6 +92,37 @@ psql
 psql "postgres://postgres:postgres@localhost:5432/app_db?sslmode=disable"
 ```
 
+## terraform storage (optional)
+
+By default the API runs with MinIO root credentials and creates the `images` bucket itself
+(`createBucket: true` in `config.dev.yaml`). Terraform is an opt-in alternative that provisions
+the bucket plus a least-privilege `img-api` IAM user, and writes a gitignored `config.tf.yaml`
+with `createBucket: false` for the API to use instead.
+
+```shell
+docker compose -f compose.dev.yaml up -d
+cp infra/terraform/minio/local.tfvars.example infra/terraform/minio/local.tfvars
+
+make tf/init
+make tf/apply     # idempotent; `make tf/plan` shows No changes afterwards
+make run/api/tf   # API with the generated config.tf.yaml
+```
+
+`tofu` and `terraform` both work; the Makefile picks whichever is on `PATH`
+(override with `make TF=terraform ...`). Tear the resources down with `make tf/destroy`.
+
+If the `images` bucket already exists (for example from a previous `make run/api`), `apply` fails
+with "bucket already exists". Adopt it with:
+
+```shell
+make tf/init
+$(command -v tofu || command -v terraform) -chdir=infra/terraform/minio import minio_s3_bucket.images images
+make tf/apply
+```
+
+or rebuild the stack with `docker compose -f compose.dev.yaml down -v` first. The generated
+`config.tf.yaml`, local state and `local.tfvars` are all gitignored.
+
 ## fake prod
 
 ```shell

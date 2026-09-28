@@ -1,0 +1,19 @@
+port: 8080
+env: local
+db:
+  dsn: "${db_dsn}"
+trustedOrigins:
+%{ for origin in trusted_origins ~}
+  - ${origin}
+%{ endfor ~}
+storage:
+  endpoint: "${internal_endpoint}"
+  publicEndpoint: "${public_endpoint}"
+  region: "us-east-1"
+  bucket: "${bucket}"
+  accessKey: "${access_key}"
+  secretKey: "${secret_key}"
+  usePathStyle: true
+  createBucket: false
+  presignPutTTL: "5m"
+  presignGetTTL: "15m"
