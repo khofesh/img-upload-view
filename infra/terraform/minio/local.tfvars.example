@@ -1,0 +1,18 @@
+# Copy to local.tfvars (gitignored) and adjust as needed.
+# Values below match compose.dev.yaml and config.dev.yaml.
+
+minio_server        = "localhost:9000"
+minio_root_user     = "minioadmin"
+minio_root_password = "minioadmin"
+
+bucket_name   = "images"
+api_user      = "img-api"
+force_destroy = true
+
+internal_endpoint = "http://localhost:9000"
+public_endpoint   = "http://localhost:9000"
+
+db_dsn          = "postgres://postgres:postgres@localhost:5432/app_db?sslmode=disable"
+trusted_origins = ["http://localhost:3000", "http://localhost:5173"]
+
+api_config_path = "../../../config.tf.yaml"

@@ -30,6 +30,16 @@ go.work.sum
 # MinIO AIStor license (mounted by compose)
 minio.license
 
+# Terraform (infra/terraform)
+infra/terraform/**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example
+config.tf.yaml
+crash.log
+.terraform.lock.hcl.tmp
+
 # Editor/IDE
 # .idea/
 # .vscode/

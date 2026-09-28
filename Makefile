@@ -1,4 +1,6 @@
 GO_MODULE := apac-ai-api
+TF ?= $(shell command -v tofu || command -v terraform)
+TF_DIR := infra/terraform/minio
 
 # ==================================================================================== #
 # HELPERS
@@ -14,10 +16,15 @@ help:
 # DEVELOPMENT
 # ==================================================================================== #
 
-## run: run API application
+## run/api: run API application
 .PHONY: run/api
 run/api:
 	go run ./cmd/api -config-path="./config.dev.yaml"
+
+## run/api/tf: run the API with the Terraform-generated config
+.PHONY: run/api/tf
+run/api/tf:
+	go run ./cmd/api -config-path="./config.tf.yaml"
 
 ## run: run cli
 .PHONY: run/cli
@@ -28,6 +35,31 @@ run/cli:
 .PHONY: run/cli/cleanup
 run/cli/cleanup:
 	go run ./cmd/cli cleanup -config-path="./config.dev.yaml"
+
+
+# ==================================================================================== #
+# TERRAFORM
+# ==================================================================================== #
+
+## tf/init: initialise the minio Terraform module
+.PHONY: tf/init
+tf/init:
+	$(TF) -chdir=$(TF_DIR) init
+
+## tf/plan: plan the minio Terraform changes
+.PHONY: tf/plan
+tf/plan:
+	$(TF) -chdir=$(TF_DIR) plan -var-file=local.tfvars
+
+## tf/apply: apply the minio Terraform changes
+.PHONY: tf/apply
+tf/apply:
+	$(TF) -chdir=$(TF_DIR) apply -var-file=local.tfvars
+
+## tf/destroy: destroy the minio Terraform resources
+.PHONY: tf/destroy
+tf/destroy:
+	$(TF) -chdir=$(TF_DIR) destroy -var-file=local.tfvars
 
 
 # ==================================================================================== #

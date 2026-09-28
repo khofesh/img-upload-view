@@ -22,6 +22,7 @@ pkg/errors/               ErrorResponse — JSON error envelope helpers
 pkg/read-config/          YAML config loader
 configs/                  prod config.yaml, nginx.conf, postgres-init/01-init.sql (schema)
 docs/todo/sql/            ALTER TABLE migration scripts for existing dev databases
+infra/terraform/minio/    Terraform: images bucket, img-api IAM user/policy, generated API config
 web/                      React Router 7 + Vite + Tailwind 4 frontend (routes: home, upload, gallery)
 dummy-jpeg/               Python script generating oversized test JPEGs
 ```
@@ -52,6 +53,9 @@ Key facts:
   (prefix stripped) and `/` → frontend; the browser fetches images from `publicEndpoint`.
 - Config is YAML only (`config.dev.yaml` locally, `configs/config.yaml` in prod). The `PORT` /
   `DB_DSN` env vars in `compose.yaml` are not read by the code.
+- Terraform (`infra/terraform/minio/`) can provision the bucket and a least-privilege `img-api`
+  user, writing a gitignored `config.tf.yaml` with `createBucket: false`. It is opt-in; the default
+  `make run/api` path keeps using root credentials and `createBucket: true`.
 - MinIO AIStor needs a license file mounted at `/minio.license`; compose reads
   `${MINIO_LICENSE_PATH:-./minio.license}`.
 - Frontend calls `${VITE_API_URL || "/api"}`. Dev: `VITE_API_URL=http://localhost:8080`.
@@ -81,6 +85,9 @@ make build/api
 go test ./...
 go test -tags=integration ./internal/storage/ # against a running MinIO
 docker compose -f compose.yaml up --build     # full stack behind nginx on :80
+
+make tf/init tf/plan tf/apply tf/destroy      # MinIO storage via OpenTofu/Terraform
+make run/api/tf                               # API on :8080 with config.tf.yaml
 ```
 
 ## Code Style
